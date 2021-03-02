@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace csRAW.RAW
-{
-    //delegate object RAWCSFunction(List<object> args, Context context);
+namespace RAW
+{ 
 
     abstract class RAWValue {
         //public abstract bool BooleanRepr();

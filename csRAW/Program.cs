@@ -3,24 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using csRAW.RAW;
+using RAW;
 using System.IO;
 
 
 namespace csRAW
 {
-    class Test
-    {
-        public Test(int a)
-        {
-
-        }
-
-        public static implicit operator Test(int v)
-        {
-            throw new NotImplementedException();
-        }
-    }
     class Program
     {
         static void Main(string[] args)

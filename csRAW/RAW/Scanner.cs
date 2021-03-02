@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace csRAW.RAW
+namespace RAW
 {
     public class ScannerError : Exception
     {
