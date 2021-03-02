@@ -1,0 +1,25 @@
+﻿funny = {
+	"value": null,
+	"set": func(val)
+	{
+		// if function is called as a static function just return
+		if(this == null) return;
+		
+		// update value
+		this.value = val;
+	},
+	"print": func()
+	{
+		if(this == null) return;
+		print(this.value);
+	}
+};
+
+
+// Update value manually
+funny.value = 20;
+
+// Print
+funny->print();
+funny->set(23);
+funny->print();
