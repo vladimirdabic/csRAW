@@ -471,7 +471,6 @@ namespace RAW
 
         private ParserError error(Token token, string message)
         {
-            //Lox.error(token, message);
             return new ParserError($"[Line {token.line}] {message}");
         }
     }

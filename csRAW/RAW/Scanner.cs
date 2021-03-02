@@ -244,7 +244,6 @@ namespace RAW
 
         private ScannerError error(string message)
         {
-            //Lox.error(token, message);
             return new ScannerError($"[Line {line}] {message}");
         }
     }
