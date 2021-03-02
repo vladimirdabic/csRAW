@@ -1,0 +1,18 @@
+﻿print("Hello World");
+
+
+numbervar = 20;
+stringvar = "Hello World";
+
+func Test()
+{
+	return {"message": "Hello"};
+}
+
+Test2 = func()
+{
+	return {"message": "Second hello"};
+};
+
+print(Test().message);
+print(Test2()["message"]);
