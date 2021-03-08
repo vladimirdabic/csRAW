@@ -155,8 +155,16 @@ namespace RAW
                 if (peek() == '\n') line++;
                 char c = advance();
 
-                if(c == '\\' && peek() == '"')
-                    advance();
+                if(c == '\\')
+                    switch(peek())
+                    {
+                        case '"':
+                            advance();
+                            break;
+                        case '\\':
+                            advance();
+                            break;
+                    }
             }
 
             if (isAtEnd())
@@ -169,6 +177,7 @@ namespace RAW
 
             string val = source.Substring(start+1, current - start - 2);
             val = val.Replace("\\\"", "\"");
+            val = val.Replace("\\\\", "\\");
 
             addToken(TokenType.STRING, val);
         }
