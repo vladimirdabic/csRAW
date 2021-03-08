@@ -128,10 +128,11 @@ namespace RAW
         {
             object val = assignval.evaluate(ctx);
 
-            if (!(val is RAWTable))
-                throw new RuntimeError("Tried assinging a property to a non table value");
+            if (!(val is RAWTable) && !(val is List<object>))
+                throw new RuntimeError("Tried assinging a property to a non table/array value");
 
-            ((RAWTable)val)[set_name.evaluate(ctx)] = value.evaluate(ctx);
+            if(val is RAWTable) ((RAWTable)val)[set_name.evaluate(ctx)] = value.evaluate(ctx);
+            else ((List<object>)val)[Convert.ToInt32(set_name.evaluate(ctx))] = value.evaluate(ctx);
 
             return null;
         }
@@ -151,10 +152,44 @@ namespace RAW
             {
                 object value = ((RAWTable)val)[get_name.lexeme];
 
-                if (value is RAWFunction && pass_self)
+                if (value is RAWFunction)
                     ((RAWFunction)value).self_reference = val;
 
                 return value;
+            }
+            if(val is List<object>)
+            {
+                switch(get_name.lexeme)
+                {
+                    case "size":
+                    case "len":
+                    case "length":
+                    case "count":
+                        return ((List<object>)val).Count;
+
+                    case "add":
+                        return new RAWCSFunction((context, param, owner) => {
+                            if (param.Count == 0) return new RAWNull();
+
+                            ((List<object>)owner).Add(param[0]);
+
+                            return new RAWNull();
+                        }, val);
+
+                    case "pop":
+                        return new RAWCSFunction((context, param, owner) => {
+                            if (param.Count == 0) return new RAWNull();
+
+                            if(param[0] is double)
+                            {
+                                object validx = ((List<object>)owner)[Convert.ToInt32(param[0])];
+                                ((List<object>)owner).RemoveAt(Convert.ToInt32(param[0]));
+                                return validx;
+                            }
+
+                            return new RAWNull();
+                        }, val);
+                }
             }
             return new RAWNull();
         }
@@ -169,7 +204,34 @@ namespace RAW
         public override object evaluate(Context ctx)
         {
             object val = value.evaluate(ctx);
-            if (val is RAWTable) return ((RAWTable)val)[get_expr.evaluate(ctx)];
+            if (val is RAWTable)
+            {
+                object value = ((RAWTable)val)[get_expr.evaluate(ctx)];
+
+                if (value is RAWFunction)
+                    ((RAWFunction)value).self_reference = val;
+
+                return value;
+            }
+            if(val is List<object>)
+            {
+                int idx = Convert.ToInt32(get_expr.evaluate(ctx));
+                if (idx >= ((List<object>)val).Count || idx < 0) return new RAWNull();
+                object value = ((List<object>)val)[idx];
+
+                if (value is RAWFunction)
+                    ((RAWFunction)value).self_reference = val;
+
+                return value;
+            }
+            if(val is string)
+            {
+                int idx = Convert.ToInt32(get_expr.evaluate(ctx));
+                if (idx >= ((string)val).Length || idx < 0) return new RAWNull();
+                char value = ((string)val)[idx];
+
+                return value.ToString();
+            }
             return new RAWNull();
         }
     }
@@ -421,34 +483,26 @@ namespace RAW
 
     class FORNode : Node
     {
-        private Node statement, check, expr, decl;
+        private Node statement, start, end;
+        private Token varname;
 
-        public FORNode(Node decl, Node check, Node expr, Node statement)
+        public FORNode(Token varname, Node start, Node end, Node statement)
         {
-            this.expr = expr;
+            this.varname = varname;
             this.statement = statement;
-            this.decl = decl;
-            this.check = check;
+            this.start = start;
+            this.end = end;
         }
 
         public override object evaluate(Context ctx)
         {
-            if (decl != null)
-                decl.evaluate(ctx);
-
-            do
+            for(double i = (double)start.evaluate(ctx); i < Convert.ToDouble(end.evaluate(ctx)); i++)
             {
-                object result = check.evaluate(ctx);
-
-                if (result is RAWNull) return null;
-                if (result is bool && !(bool)result) return null;
-
+                ctx.GetLocal()[varname.lexeme] = i;
                 statement.evaluate(ctx);
+            }
 
-                if (expr != null)
-                    expr.evaluate(ctx);
-
-            } while (true);
+            return null;
         }
     }
 
@@ -484,6 +538,55 @@ namespace RAW
             localctx[varname.lexeme] = valued;
 
             return val_ret;
+        }
+    }
+
+    class ArrayNode : Node
+    {
+        private List<Node> elements;
+
+        public ArrayNode(List<Node> elements) { this.elements = elements; }
+
+        public override object evaluate(Context ctx)
+        {
+            List<object> arr = new List<object>();
+
+            foreach (Node n in elements)
+                arr.Add(n.evaluate(ctx));
+
+            return arr;
+        }
+    }
+
+    class FOREachNode : Node
+    {
+        private Node statement, loop_obj;
+        private Token varname;
+
+        public FOREachNode(Token varname, Node loop_obj, Node statement)
+        {
+            this.varname = varname;
+            this.statement = statement;
+            this.loop_obj = loop_obj;
+        }
+
+        public override object evaluate(Context ctx)
+        {
+
+
+            object lobj = loop_obj.evaluate(ctx);
+
+            if (lobj is List<object>)
+            {
+                foreach (object o in (List<object>)lobj)
+                {
+                    ctx.GetLocal()[varname.lexeme] = o;
+                    statement.evaluate(ctx);
+                }
+                return null;
+            }
+
+            throw new RuntimeError("Tried looping over a non array value.");
         }
     }
 

@@ -13,20 +13,28 @@ namespace csRAW
     {
         static void Main(string[] args)
         {
-            if(args.Length == 0)
+            string filename;
+            if (args.Length == 0)
             {
-                Console.WriteLine("Please enter a script file name");
-                Console.WriteLine("Usage: RAW <script file>");
+                if (!File.Exists(@"C:\Users\Vladimir\source\repos\csRAW\csRAW\TestCode.raw"))
+                {
+                    Console.WriteLine("Please enter a script file name");
+                    Console.WriteLine("Usage: csRAW <script file>");
+                    return;
+                }
+
+                filename = @"C:\Users\Vladimir\source\repos\csRAW\csRAW\TestCode.raw";
+            }
+            else
+                filename = args[0];
+
+            if(!File.Exists(filename))
+            {
+                Console.WriteLine($"File '{filename}' not found");
                 return;
             }
 
-            if(!File.Exists(args[0]))
-            {
-                Console.WriteLine($"File '{args[0]}' not found");
-                return;
-            }
-
-            string CodeToRun = File.ReadAllText(args[0]);
+            string CodeToRun = File.ReadAllText(filename);
 
             try
             {
@@ -53,6 +61,8 @@ namespace csRAW
             {
                 Console.WriteLine($"Runtime Error:\n{e.Message}");
             }
+
+            Console.ReadKey();
         }
     }
 }

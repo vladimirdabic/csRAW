@@ -73,6 +73,7 @@ namespace RAW
             if (match(TokenType.RETURN)) return ParseReturn();
             if (match(TokenType.PASS)) return ParsePass();
             if (match(TokenType.FOR)) return ParseFor();
+            if (match(TokenType.FOREACH)) return ParseForEach();
             if (match(TokenType.LEFT_BRACE))
             {
                 if (ctx_container) return new CTXContainer(GetBlock());
@@ -88,28 +89,36 @@ namespace RAW
             if (match(TokenType.RIGHT_PAREN) || isAtEnd())
                 throw error(previous(), "Expected expression for the for statement");
 
-            Node decl = null, checke = null, expr = null;
+            Token varname = consume(TokenType.IDENTIFIER, "Expected variable name in for loop");
+            consume(TokenType.COMMA, "Expected ',' after variable name in for loop");
 
-            if (!check(TokenType.SEMICOLON))
-                decl = ParseExpression();
+            Node start = ParseExpression();
+            consume(TokenType.COMMA, "Expected ',' after starting value in for loop");
 
-            consume(TokenType.SEMICOLON, "Expected ';' after for initializer");
-
-            if (!check(TokenType.SEMICOLON))
-                checke = ParseExpression();
-            else
-                checke = new LiteralNode(true);
-
-            consume(TokenType.SEMICOLON, "Expected ';' after for check value");
-
-            if (!check(TokenType.RIGHT_PAREN))
-                expr =  ParseExpression();
-
-            consume(TokenType.RIGHT_PAREN, "Expected ')' after for expression");
+            Node end = ParseExpression();
+            consume(TokenType.RIGHT_PAREN, "Expected ')' after end value in for loop");
 
             Node statement = ParseStatement(false);
 
-            return new FORNode(decl, checke, expr, statement);
+            return new FORNode(varname, start, end ,statement);
+        }
+
+        public Node ParseForEach()
+        {
+            consume(TokenType.LEFT_PAREN, "Expected '(' after foreach");
+
+            if (match(TokenType.RIGHT_PAREN) || isAtEnd())
+                throw error(previous(), "Expected expression for the foreach statement");
+
+            Token varname = consume(TokenType.IDENTIFIER, "Expected variable name in foreach loop");
+            consume(TokenType.COLON, "Expected ':' after variable name in foreach loop");
+
+            Node loop_obj = ParseExpression();
+            consume(TokenType.RIGHT_PAREN, "Expected ')' after value in foreach loop");
+
+            Node statement = ParseStatement(false);
+
+            return new FOREachNode(varname, loop_obj, statement);
         }
 
         public Node ParseIFStmt()
@@ -369,6 +378,9 @@ namespace RAW
             if (match(TokenType.FUN))
                 return new LiteralNode(ParseFuncValue());
 
+            if (match(TokenType.LEFT_SQR))
+                return ParseArray();
+
             throw error(peek(), "Expected expression");
         }
 
@@ -420,6 +432,22 @@ namespace RAW
             return kvPairs;
         }
 
+        public ArrayNode ParseArray()
+        {
+            List<Node> elements = new List<Node>();
+
+            if(!check(TokenType.RIGHT_SQR))
+            {
+                do
+                {
+                    elements.Add(ParseExpression());
+                } while (match(TokenType.COMMA));
+            }
+
+            consume(TokenType.RIGHT_SQR, "Expected ']' after array values");
+
+            return new ArrayNode(elements);
+        }
 
         private bool match(params TokenType[] types)
         {

@@ -125,21 +125,23 @@ namespace RAW
 
     class RAWCSFunction : RAWCallable
     {
-        private Func<Context, List<object>, object> function;
+        private Func<Context, List<object>, object, object> function;
+        public object owner;
 
-        public RAWCSFunction(Func<Context, List<object>, object> func)
+        public RAWCSFunction(Func<Context, List<object>, object, object> func, object owner = null)
         {
+            this.owner = owner;
             function = func;
         }
 
         public override bool IsEqual(object other)
         {
-            throw new NotImplementedException();
+            return (other is RAWCSFunction) && (other == this);
         }
 
         public override object Run(Context ctx, List<object> args)
         {
-            return function(ctx, args);
+            return function(ctx, args, owner);
         }
     }
 }
