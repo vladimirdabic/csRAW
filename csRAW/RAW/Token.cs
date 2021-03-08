@@ -26,7 +26,7 @@ namespace RAW
         // Keywords.
         AND, CLASS, ELSE, FALSE, FUN, FOR, FOREACH, IF, NIL, OR,
         PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-        PASS, GLOBAL,
+        PASS, GLOBAL, NEW,
 
         EOF
     }

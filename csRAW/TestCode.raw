@@ -1,3 +1,233 @@
-﻿my_thing = "Hello World";
+﻿
+// SCANNER CLASS
 
-print(my_thing[0]);
+Scanner = {
+	"start": 0,
+	"cur": 0,
+	"tokens": [],
+	"source": null 
+};
+
+Scanner.scan = func(src) {
+	this.source = src;
+	this.tokens.clear();
+	this.cur = 0;
+   
+	while(!this.atEnd())
+	{
+		this.start = this.cur;
+		this.scanToken();
+	}
+
+	this.addToken("EOF"); 
+	return this.tokens;
+};
+
+Scanner.atEnd = func() {
+	return this.cur >= this.source.len; 
+};
+
+Scanner.advance = func() {
+	c = this.source[this.cur];
+	this.cur = this.cur+1;
+	return c;
+};
+
+Scanner.peek = func() {
+	if(this.atEnd())
+		return " ";
+	return this.source[this.cur];
+};
+
+Scanner.match = func(chr) {
+	if(this.atEnd())
+		return false;
+	if(this.source[this.cur] != chr) return false;
+	this.cur = this.cur+1;
+	return true;
+};
+
+func isDigit(c) {
+  return c.match("[0-9]");
+}
+
+Scanner.addToken = func(type, literal)
+{
+	lexeme = this.source.sub(this.start, this.cur);
+	this.tokens.add({"type":type, "lexeme": lexeme, "literal": literal});
+};
+
+Scanner.scanToken = func() {
+	c = this.advance();
+	
+	if(c == "+")
+		this.addToken("PLUS");
+	if(c == "-")
+		this.addToken("MINUS");
+	if(c == "*")
+		this.addToken("STAR");
+	if(c == "/")
+		this.addToken("SLASH");
+	if(isDigit(c))
+		this.readNum();
+	if(c == "(")
+		this.addToken("OPEN");
+	if(c == ")")
+		this.addToken("CLOSE");
+};
+
+Scanner.readNum = func()
+{
+	while(isDigit(this.peek())) this.advance();
+	if(this.peek() == ".")
+	{
+		this.advance();
+		while(isDigit(this.peek())) this.advance();
+	}
+	val = this.source.sub(this.start, this.cur); 
+	this.addToken("NUM", num(val));
+};
+
+
+// PARSER CLASS
+
+Parser = {
+	"toks": null,
+	"cur": 0,
+	"parse": func(tl) {
+		this.toks = tl;
+		this.cur = 0;
+		return this.pTerm();
+	},
+	"termops": ["PLUS", "MINUS"],
+	"facops": ["STAR", "SLASH"]
+};
+
+Parser.pTerm = func() {
+	l = this.pFactor();
+
+	while(this.match(this.termops)) {
+		op = this.prev();
+		r = this.pFactor();
+		l = {"type": "binop", "l": l, "r": r, "op": op};
+	}
+
+	return l;
+};
+
+Parser.pFactor = func() {
+	l = this.pPrimary();
+
+	while(this.match(this.facops)) {
+		op = this.prev();
+		r = this.pPrimary();
+		l = {"type": "binop", "l": l, "r": r, "op": op};
+	}
+
+	return l;
+};
+
+Parser.pPrimary = func() {
+	if(this.m("NUM"))
+		return {"type": "num", "v": this.prev().literal};
+
+	if(this.m("OPEN")) {
+		expr = this.pTerm();
+		this.advance();
+		return expr;
+	}
+
+	if(this.m("MINUS"))
+		return {"type": "uminus", "v": this.pPrimary()};
+};
+
+
+Parser.peek = func() {
+	return this.toks[this.cur];
+};
+
+Parser.atEnd = func() {
+	return this.peek().type == "EOF";
+};
+
+Parser.advance = func() {
+	if(!this.atEnd()) this.cur = this.cur+1;
+	return this.prev(); 
+};
+
+Parser.prev = func() {
+	return this.toks[this.cur-1];
+};
+
+Parser.check = func(type) {
+	if(this.atEnd()) return false;
+	return this.peek().type == type;
+};
+
+Parser.match = func(types) {
+	foreach(tp : types) {
+		if(this.check(tp)) {
+			this.advance();
+			return true;
+		}
+	}
+	return false;
+};
+
+Parser.m = func(tp) {
+	if(this.check(tp)) {
+		this.advance();
+		return true;
+	}
+	return false;
+};
+
+
+// EVALUATION STUFF
+
+operations = {
+	"+": func(l, r) {
+		return l + r;
+	},
+	"-": func(l, r) {
+		return l - r;
+	},
+	"*": func(l, r) {
+		return l * r;
+	},
+	"/": func(l, r) {
+		return l / r;
+	}
+};
+
+func eval(node)
+{
+	if(node.type == "num")
+		return node.v;
+	if(node.type == "uminus")
+		return -(eval(node.v));
+	if(node.type == "binop")
+		return operations[node.op.lexeme](eval(node.l), eval(node.r)); 
+}
+
+
+
+// MAIN
+
+s = new Scanner;
+p = new Parser;
+
+in = " ";
+
+print("Type exit to stop");
+
+while(in != "exit")
+{
+	in = input("> ");
+	if(in != "exit")
+	{
+		toks = s.scan(in);
+		tree = p.parse(toks);
+		print(eval(tree));
+	}
+}

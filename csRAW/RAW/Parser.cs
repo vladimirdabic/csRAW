@@ -69,6 +69,7 @@ namespace RAW
         public Node ParseStatement(bool ctx_container = true)
         {
             if (match(TokenType.IF)) return ParseIFStmt();
+            if (match(TokenType.WHILE)) return ParseWhileStmt();
             if (match(TokenType.GLOBAL)) return ParseGlobal();
             if (match(TokenType.RETURN)) return ParseReturn();
             if (match(TokenType.PASS)) return ParsePass();
@@ -131,9 +132,24 @@ namespace RAW
             Node expr = ParseExpression();
             consume(TokenType.RIGHT_PAREN, "Expected ')' after if expression");
 
-            Node statement = ParseStatement();
+            Node statement = ParseStatement(false);
 
             return new IFNode(expr, statement);
+        }
+
+        public Node ParseWhileStmt()
+        {
+            consume(TokenType.LEFT_PAREN, "Expected '(' after while");
+
+            if (match(TokenType.RIGHT_PAREN) || isAtEnd())
+                throw error(previous(), "Expected expression for the while statement");
+
+            Node expr = ParseExpression();
+            consume(TokenType.RIGHT_PAREN, "Expected ')' after while expression");
+
+            Node statement = ParseStatement(false);
+
+            return new WhileNode(expr, statement);
         }
 
         public GlobalDeclNode ParseGlobal()
@@ -193,7 +209,7 @@ namespace RAW
 
         public Node ParseAssignment()
         {
-            Node left = ParseEquals();
+            Node left = ParseOr();
 
             if(match(TokenType.EQUAL))
             {
@@ -214,6 +230,34 @@ namespace RAW
                     TableGetExprNode get = (TableGetExprNode)left;
                     return new TableSetExprNode(get.value, get.get_expr, right);
                 }
+            }
+
+            return left;
+        }
+
+        public Node ParseOr()
+        {
+            Node left = ParseAnd();
+
+            while (match(TokenType.OR))
+            {
+                Token op = previous();
+                Node right = ParseAnd();
+                left = new BinaryOpNode(left, right, op);
+            }
+
+            return left;
+        }
+
+        public Node ParseAnd()
+        {
+            Node left = ParseEquals();
+
+            while (match(TokenType.AND))
+            {
+                Token op = previous();
+                Node right = ParseEquals();
+                left = new BinaryOpNode(left, right, op);
             }
 
             return left;
@@ -380,6 +424,24 @@ namespace RAW
 
             if (match(TokenType.LEFT_SQR))
                 return ParseArray();
+
+            if (match(TokenType.BANG))
+            {
+                Node expr = ParseExpression();
+                return new NOTNode(expr);
+            }
+
+            if (match(TokenType.MINUS))
+            {
+                Node expr = ParsePrimary();
+                return new UMinusNode(expr);
+            }
+
+            if(match(TokenType.NEW))
+            {
+                Node expr = ParsePrimary();
+                return new NewNode(expr);
+            }
 
             throw error(peek(), "Expected expression");
         }

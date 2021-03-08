@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace RAW
 {
@@ -21,6 +22,26 @@ namespace RAW
         public RuntimeError(string message) : base(message) { }
         public RuntimeError(string message, Exception inner) : base(message, inner) { }
     };
+
+    public static class HelperMethods
+    {
+        public static object CopyObject(object o)
+        {
+            if(o is RAWTable t)
+                return t.Copy();
+            if(o is List<object> l)
+            {
+                List<object> newList = new List<object>();
+                foreach(object obj in l)
+                {
+                    newList.Add(CopyObject(obj));
+                }
+                return newList;
+            }
+
+            return o;
+        }
+    }
 
     abstract class Node
     {
@@ -69,6 +90,8 @@ namespace RAW
             { TokenType.GREATER_EQUAL, (l, r, ctx) => (dynamic)l.evaluate(ctx) >= (dynamic)r.evaluate(ctx) },
             { TokenType.LESS, (l, r, ctx) => (dynamic)l.evaluate(ctx) < (dynamic)r.evaluate(ctx) },
             { TokenType.LESS_EQUAL, (l, r, ctx) => (dynamic)l.evaluate(ctx) <= (dynamic)r.evaluate(ctx) },
+            { TokenType.AND, (l, r, ctx) => (dynamic)l.evaluate(ctx) && (dynamic)r.evaluate(ctx) },
+            { TokenType.OR, (l, r, ctx) => (dynamic)l.evaluate(ctx) || (dynamic)r.evaluate(ctx) },
             { TokenType.EQUAL_EQUAL, (l, r, ctx) => {
                 object left = l.evaluate(ctx);
                 object right = r.evaluate(ctx);
@@ -157,6 +180,51 @@ namespace RAW
 
                 return value;
             }
+            if(val is string)
+            {
+                switch(get_name.lexeme)
+                {
+                    case "size":
+                    case "len":
+                    case "length":
+                    case "count":
+                        return ((string)val).Length;
+
+                    case "chars":
+                        List<object> chrs = new List<object>();
+                        chrs.AddRange(((string)val).Select(c => c.ToString()));
+                        return chrs;
+
+                    case "sub":
+                        return new RAWCSFunction((context, param, owner) => {
+                            if (param.Count == 0) return new RAWNull();
+
+                            int start = Convert.ToInt32(param[0]);
+                            if (param.Count == 1)
+                                return ((string)owner).Substring(start);
+
+                            int end = Convert.ToInt32(param[1]);
+                            return ((string)owner).Substring(start, end-start);
+                        }, val);
+
+                    case "match":
+                        return new RAWCSFunction((context, param, owner) => {
+                            if (param.Count == 0) return new RAWNull();
+
+                            Match match;
+
+                            try
+                            {
+                                match = Regex.Match((string)owner, (string)param[0]);
+                            } catch
+                            {
+                                return new RAWNull();
+                            }
+
+                            return match.Success;
+                        }, val);
+                }
+            }
             if(val is List<object>)
             {
                 switch(get_name.lexeme)
@@ -186,6 +254,13 @@ namespace RAW
                                 ((List<object>)owner).RemoveAt(Convert.ToInt32(param[0]));
                                 return validx;
                             }
+
+                            return new RAWNull();
+                        }, val);
+
+                    case "clear":
+                        return new RAWCSFunction((context, param, owner) => {
+                            ((List<object>)owner).Clear();
 
                             return new RAWNull();
                         }, val);
@@ -461,6 +536,32 @@ namespace RAW
         }
     }
 
+    class WhileNode : Node
+    {
+        private Node statement;
+        private Node expr;
+
+        public WhileNode(Node expr, Node statement)
+        {
+            this.expr = expr;
+            this.statement = statement;
+        }
+
+        public override object evaluate(Context ctx)
+        {
+            object result;
+            do
+            {
+                result = expr.evaluate(ctx);
+
+                if (result is RAWNull) return null;
+                if (result is bool && !(bool)result) return null;
+
+                statement.evaluate(ctx);
+            } while (true);
+        }
+    }
+
     class FuncDefNode : Node
     {
         private Token func_name;
@@ -587,6 +688,55 @@ namespace RAW
             }
 
             throw new RuntimeError("Tried looping over a non array value.");
+        }
+    }
+
+    class NOTNode : Node
+    {
+        private Node val;
+
+        public NOTNode(Node val) { this.val = val; }
+
+        public override object evaluate(Context ctx)
+        {
+            object o = val.evaluate(ctx);
+
+            if(o is bool b)
+                return !b;
+
+            if(o is RAWNull)
+                return true;
+
+            return false;
+        }
+    }
+
+    class UMinusNode : Node
+    {
+        private Node val;
+
+        public UMinusNode(Node val) { this.val = val; }
+
+        public override object evaluate(Context ctx)
+        {
+            object o = val.evaluate(ctx);
+
+            if (o is double d)
+                return -d;
+
+            return new RAWNull();
+        }
+    }
+
+    class NewNode : Node
+    {
+        private Node val;
+
+        public NewNode(Node val) { this.val = val; }
+
+        public override object evaluate(Context ctx)
+        {
+            return HelperMethods.CopyObject(val.evaluate(ctx));
         }
     }
 

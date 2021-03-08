@@ -7,7 +7,7 @@ using RAW;
 
 namespace csRAW
 {
-    class GlobalData
+    static class GlobalData
     {
         public static RAWTable CreateGlobal()
         {
@@ -45,10 +45,25 @@ namespace csRAW
                 return Console.ReadLine();
             });
 
+            RAWCSFunction tonum = new RAWCSFunction((context, param, owner) =>
+            {
+                if (param.Count == 0) return new RAWNull();
+
+                if (param[0] is string s)
+                    return Convert.ToDouble(s);
+
+                if (param[0] is double d)
+                    return d;
+
+                return new RAWNull();
+
+            });
+
             RAWTable GlobalCTX = new RAWTable()
             {
                 ["print"] = printfunc,
                 ["input"] = input,
+                ["num"] = tonum,
                 ["debug"] = new RAWTable()
                 {
                     ["ctx"] = getctxfunc,

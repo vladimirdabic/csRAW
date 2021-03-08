@@ -32,8 +32,22 @@ namespace RAW
     class RAWTable : RAWValue
     {
         private Dictionary<object, object> data = new Dictionary<object, object> { };
-        private RAWTable metatable;
+        //private RAWTable metatable;
 
+        public RAWTable(Dictionary<object, object> data = null)
+        {
+            if (data != null) this.data = data;
+        }
+
+        public RAWTable Copy()
+        {
+            Dictionary<object, object> newdata = new Dictionary<object, object>();
+            foreach(KeyValuePair<object, object> item in data)
+            {
+                newdata[HelperMethods.CopyObject(item.Key)] = HelperMethods.CopyObject(item.Value);
+            }
+            return new RAWTable(newdata);
+        }
         public void Set(object key, object value)
         {
             data[key] = value;

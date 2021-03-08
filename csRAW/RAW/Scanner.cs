@@ -38,7 +38,8 @@ namespace RAW
             { "false", TokenType.FALSE },
             { "pass", TokenType.PASS },
             { "potato", TokenType.PASS },
-            { "global", TokenType.GLOBAL }
+            { "global", TokenType.GLOBAL },
+            { "new", TokenType.NEW }
         };
 
         public Scanner(string source)
@@ -96,6 +97,12 @@ namespace RAW
                     break;
                 case '<':
                     addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+                    break;
+                case '&':
+                    addToken(match('&') ? TokenType.AND : TokenType.AND);
+                    break;
+                case '|':
+                    addToken(match('|') ? TokenType.OR : TokenType.OR);
                     break;
 
                 case '/':
