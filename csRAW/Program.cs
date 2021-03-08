@@ -62,7 +62,7 @@ namespace csRAW
                 Console.WriteLine($"Runtime Error:\n{e.Message}");
             }
 
-            Console.ReadKey();
+            //Console.ReadKey();
         }
     }
 }

@@ -56,7 +56,13 @@ namespace csRAW
                     return d;
 
                 return new RAWNull();
+            });
 
+            RAWCSFunction errorfunc = new RAWCSFunction((context, param, owner) =>
+            {
+                if (param.Count == 0) return new RAWNull();
+
+                throw new RuntimeError((string)param[0]);
             });
 
             RAWTable GlobalCTX = new RAWTable()
@@ -64,6 +70,7 @@ namespace csRAW
                 ["print"] = printfunc,
                 ["input"] = input,
                 ["num"] = tonum,
+                ["error"] = errorfunc,
                 ["debug"] = new RAWTable()
                 {
                     ["ctx"] = getctxfunc,
