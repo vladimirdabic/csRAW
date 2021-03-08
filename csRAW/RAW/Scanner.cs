@@ -153,7 +153,10 @@ namespace RAW
             while(peek() != '"' && !isAtEnd())
             {
                 if (peek() == '\n') line++;
-                advance();
+                char c = advance();
+
+                if(c == '\\' && peek() == '"')
+                    advance();
             }
 
             if (isAtEnd())
@@ -165,6 +168,8 @@ namespace RAW
             advance();
 
             string val = source.Substring(start+1, current - start - 2);
+            val = val.Replace("\\\"", "\"");
+
             addToken(TokenType.STRING, val);
         }
         
