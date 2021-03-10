@@ -38,6 +38,8 @@ namespace RAW
                 }
                 return newList;
             }
+            if(o is RAWFunction f)
+                return f.Copy();
 
             return o;
         }

@@ -102,6 +102,11 @@ namespace RAW
             return (other is RAWFunction) && (other == this);
         }
 
+        public RAWFunction Copy()
+        {
+            return new RAWFunction(code, arg_names);
+        }
+
         public override object Run(Context ctx, List<object> args)
         {
 

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RAW;
+using System.IO;
+
 
 namespace csRAW
 {
@@ -79,6 +81,11 @@ namespace csRAW
                 return new RAWNull();
             });
 
+            RAWCSFunction readFilef = new RAWCSFunction((context, param, owner) =>
+            {
+                return File.ReadAllText((string)param[0]);
+            });
+
             RAWTable GlobalCTX = new RAWTable()
             {
                 ["print"] = printfunc,
@@ -86,6 +93,7 @@ namespace csRAW
                 ["num"] = tonum,
                 ["error"] = errorfunc,
                 ["type"] = typef,
+                ["readfile"] = readFilef,
                 ["debug"] = new RAWTable()
                 {
                     ["ctx"] = getctxfunc,
