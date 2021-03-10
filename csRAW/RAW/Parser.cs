@@ -445,7 +445,7 @@ namespace RAW
 
             if(match(TokenType.NEW))
             {
-                Node expr = ParsePrimary();
+                Node expr = ParseExpression();
                 return new NewNode(expr);
             }
 
