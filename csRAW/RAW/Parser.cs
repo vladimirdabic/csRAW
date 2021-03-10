@@ -218,7 +218,7 @@ namespace RAW
                 if(left is VariableNode)
                 {
                     Token name = ((VariableNode)left).variable;
-                    return new AssignNode(name, right);
+                    return new AssignNode(name, right, ((VariableNode)left).is_global);
                 }
                 else if (left is TableGetNode)
                 {
@@ -394,7 +394,13 @@ namespace RAW
                 if (match(TokenType.MINUS_MINUS))
                     return new VarIncDec(vartkn, true, false);
 
-                return new VariableNode(vartkn);
+                return new VariableNode(vartkn, false);
+            }
+
+            if (match(TokenType.DOLLAR))
+            {
+                Token vartkn = consume(TokenType.IDENTIFIER, "Expected variable after '$'");
+                return new VariableNode(vartkn, true);
             }
 
             if (match(TokenType.PLUS_PLUS))

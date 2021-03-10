@@ -76,6 +76,7 @@ namespace RAW
                 case ']': addToken(TokenType.RIGHT_SQR); break;
                 case ',': addToken(TokenType.COMMA); break;
                 case '.': addToken(TokenType.DOT); break;
+                case '$': addToken(TokenType.DOLLAR); break;
                 case '-':
                     addToken(match('>') ? TokenType.POINTER_ARROW : match('-') ? TokenType.MINUS_MINUS : TokenType.MINUS);
                     break;

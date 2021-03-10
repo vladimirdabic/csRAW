@@ -66,10 +66,12 @@ namespace RAW
     class VariableNode : Node
     {
         public Token variable;
+        public bool is_global;
 
-        public VariableNode(Token variable) { this.variable = variable; }
+        public VariableNode(Token variable, bool is_global) { this.variable = variable; this.is_global = is_global; }
         public override object evaluate(Context ctx)
         {
+            if (is_global) return ctx.GetGlobalVar(variable.lexeme);
             return ctx.GetVar(variable.lexeme);
         }
     }
@@ -424,18 +426,20 @@ namespace RAW
     {
         private Token varname;
         private Node expr;
+        private bool global;
 
-        public AssignNode(Token varname, Node expr)
+        public AssignNode(Token varname, Node expr, bool global)
         {
             this.varname = varname;
             this.expr = expr;
-
+            this.global = global;
         }
 
         public override object evaluate(Context ctx)
         {
             object val = expr.evaluate(ctx);
-            ctx.SetVar(varname.lexeme, val);
+            if (!global) ctx.SetVar(varname.lexeme, val);
+            else ctx.SetGlobalVar(varname.lexeme, val);
             return val;
         }
     }

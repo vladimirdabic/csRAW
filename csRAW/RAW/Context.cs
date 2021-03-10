@@ -46,10 +46,19 @@ namespace RAW
             return lcl is RAWNull ? GetGlobal()[var_name] : lcl;
         }
 
+        public object GetGlobalVar(object var_name)
+        {
+            return GetGlobal()[var_name];
+        }
+
         public void SetVar(object var_name, object value)
         {
-            RAWTable table = GetGlobal().Exists(var_name) ? GetGlobal() : GetLocal();
-            table[var_name] = value;
+            GetLocal()[var_name] = value;
+        }
+
+        public void SetGlobalVar(object var_name, object value)
+        {
+            GetGlobal()[var_name] = value;
         }
     }
 }

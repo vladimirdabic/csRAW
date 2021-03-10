@@ -12,7 +12,7 @@ namespace RAW
         // Single-character tokens.
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
         COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, COLON,
-        LEFT_SQR, RIGHT_SQR,
+        LEFT_SQR, RIGHT_SQR, DOLLAR,
 
         // One or two character tokens.
         BANG, BANG_EQUAL,
