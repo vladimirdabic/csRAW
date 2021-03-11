@@ -86,6 +86,32 @@ namespace csRAW
                 return File.ReadAllText((string)param[0]);
             });
 
+            RAWCSFunction runstr = new RAWCSFunction((context, param, owner) =>
+            {
+                try
+                {
+                    Scanner scanner = new Scanner((string)param[0]);
+                    List<Token> tokens = scanner.scanTokens();
+
+                    Context ctx = new Context(CreateGlobal());
+                    Parser parser = new Parser(tokens);
+                    Node top_node = parser.parse();
+
+                    object r = top_node.evaluate(ctx);
+
+                    RAWTable globalctx = context.GetGlobal();
+                    foreach (KeyValuePair<object, object> pair in ctx.GetGlobal().data)
+                        globalctx[pair.Key] = pair.Value;
+
+                    return r;
+
+                }
+                catch
+                {
+                    return "Error";
+                }
+            });
+
             RAWTable GlobalCTX = new RAWTable()
             {
                 ["print"] = printfunc,
@@ -94,6 +120,7 @@ namespace csRAW
                 ["error"] = errorfunc,
                 ["type"] = typef,
                 ["readfile"] = readFilef,
+                ["runstring"] = runstr,
                 ["debug"] = new RAWTable()
                 {
                     ["ctx"] = getctxfunc,

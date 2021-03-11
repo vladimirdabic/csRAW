@@ -489,7 +489,12 @@ namespace RAW
 
                     Node key = ParseExpression();
                     consume(TokenType.COLON, "Expected ':' after table key");
-                    Node value = ParseExpression();
+                    Node value;
+
+                    if (check(TokenType.IDENTIFIER) && (peek().lexeme == "get" || peek().lexeme == "set"))
+                        value = ParseGetSet();
+                    else
+                        value = ParseExpression();
 
                     kvPairs.Add(new TableKVNode(key, value));
 
@@ -498,6 +503,27 @@ namespace RAW
 
             consume(TokenType.RIGHT_BRACE, "Expected '}' after table values");
             return kvPairs;
+        }
+
+        public Node ParseGetSet()
+        {
+            RAWFunction getter = null, setter = null;
+            
+            while(check(TokenType.IDENTIFIER) && (peek().lexeme == "get" || peek().lexeme == "set"))
+            {
+                Token tok = advance();
+
+                // Parse block
+                consume(TokenType.LEFT_BRACE, "Expected '{' after " + tok.lexeme);
+                BlockNode code = GetBlock();
+
+                if (tok.lexeme == "get")
+                    getter = new RAWFunction(code, new List<string>());
+                else
+                    setter = new RAWFunction(code, new List<string> { "value" });
+            }
+
+            return new LiteralNode(new GetterSetter(getter, setter));
         }
 
         public ArrayNode ParseArray()

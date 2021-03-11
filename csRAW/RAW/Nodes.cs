@@ -138,7 +138,12 @@ namespace RAW
             if (!(val is RAWTable))
                 throw new RuntimeError("Tried assinging a property to a non table value");
 
-            ((RAWTable)val)[set_name.lexeme] = value.evaluate(ctx);
+            RAWTable tbl_val = ((RAWTable)val);
+
+            if (tbl_val[set_name.lexeme] is GetterSetter g && g.setter != null)
+                g.Set(val, ctx, value.evaluate(ctx));
+            else
+                tbl_val[set_name.lexeme] = value.evaluate(ctx);
 
             return null;
         }
@@ -181,6 +186,10 @@ namespace RAW
 
                 if (value is RAWFunction)
                     ((RAWFunction)value).self_reference = val;
+
+                else if (value is GetterSetter g)
+                    if (g.getter != null) return g.Get(val, ctx);
+                    else return new RAWNull();
 
                 return value;
             }
@@ -226,6 +235,14 @@ namespace RAW
                             }
 
                             return match.Success;
+                        }, val);
+                    case "replace":
+                        return new RAWCSFunction((context, param, owner) => {
+                            if (param.Count < 2) return owner;
+
+                            owner = ((string)owner).Replace((string)param[0], (string)param[1]);
+
+                            return owner;
                         }, val);
                 }
             }
@@ -289,6 +306,9 @@ namespace RAW
 
                 if (value is RAWFunction)
                     ((RAWFunction)value).self_reference = val;
+                else if (value is GetterSetter g)
+                    if (g.getter != null) return g.Get(val, ctx);
+                    else return new RAWNull();
 
                 return value;
             }
@@ -743,6 +763,30 @@ namespace RAW
         public override object evaluate(Context ctx)
         {
             return HelperMethods.CopyObject(val.evaluate(ctx));
+        }
+    }
+
+    class GetterSetter
+    {
+        public RAWFunction getter;
+        public RAWFunction setter;
+
+        public GetterSetter(RAWFunction getter, RAWFunction setter)
+        {
+            this.getter = getter;
+            this.setter = setter;
+        }
+
+        public object Get(object owner, Context ctx)
+        {
+            getter.self_reference = owner;
+            return getter.Run(ctx, new List<object>());
+        }
+
+        public void Set(object owner, Context ctx, object value)
+        {
+            setter.self_reference = owner;
+            setter.Run(ctx, new List<object> { value });
         }
     }
 

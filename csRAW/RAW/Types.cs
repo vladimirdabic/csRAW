@@ -31,7 +31,7 @@ namespace RAW
     }
     class RAWTable : RAWValue
     {
-        private Dictionary<object, object> data = new Dictionary<object, object> { };
+        public Dictionary<object, object> data = new Dictionary<object, object> { };
         //private RAWTable metatable;
 
         public RAWTable(Dictionary<object, object> data = null)
