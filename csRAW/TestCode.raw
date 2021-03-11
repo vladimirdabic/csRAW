@@ -1,14 +1,13 @@
-﻿a = {
-	"myval":
-		get { return "Hello"; }
-		set { error("Cannot assign a value to 'myval'"); },
-	"test": 20
+﻿MyObj = {
+	"__assign__": func(v)
+	{
+		this.assigned_val = v;
+	}
 };
 
-print(a.test);
-print(a.myval);
-a.myval = "XD";
-print(a.test);
-print(a.myval);
+print(MyObj);
+MyObj = 2;
+print(MyObj);
+
 
 input();

@@ -460,6 +460,17 @@ namespace RAW
         public override object evaluate(Context ctx)
         {
             object val = expr.evaluate(ctx);
+            object cur_val = global ? ctx.GetGlobalVar(varname.lexeme) : ctx.GetVar(varname.lexeme);
+
+            if(cur_val is RAWTable t)
+                if(t.Exists("__assign__") && t["__assign__"] is RAWFunction)
+                {
+                    RAWFunction assign_func = (RAWFunction)t["__assign__"];
+                    assign_func.self_reference = t;
+                    assign_func.Run(ctx, new List<object> { val });
+                    return val;
+                }
+
             if (!global) ctx.SetVar(varname.lexeme, val);
             else ctx.SetGlobalVar(varname.lexeme, val);
             return val;
