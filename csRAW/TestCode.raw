@@ -1,13 +1,14 @@
 ﻿MyObj = {
-	"__assign__": func(v)
+	"__set__": func(v)
 	{
 		this.assigned_val = v;
+	},
+	"__get__": func()
+	{
+		return this.assigned_val;
 	}
 };
 
 print(MyObj);
 MyObj = 2;
 print(MyObj);
-
-
-input();

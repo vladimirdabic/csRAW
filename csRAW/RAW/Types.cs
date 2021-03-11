@@ -33,6 +33,7 @@ namespace RAW
     {
         public Dictionary<object, object> data = new Dictionary<object, object> { };
         //private RAWTable metatable;
+        public bool IgnoreGetSelf = false;
 
         public RAWTable(Dictionary<object, object> data = null)
         {
@@ -111,7 +112,20 @@ namespace RAW
         {
 
             RAWTable ctx_tbl = set_ctx == null ? new RAWTable(): set_ctx;
-            ctx_tbl["this"] = self_reference == null ? new RAWNull() : self_reference;
+
+            bool self_is_table = false;
+
+            if(self_reference != null)
+            {
+                self_is_table = self_reference is RAWTable;
+                if (self_is_table) ((RAWTable)self_reference).IgnoreGetSelf = true;
+                ctx_tbl["this"] = self_reference;
+            }
+            else
+            {
+                ctx_tbl["this"] = new RAWNull();
+            }
+            //ctx_tbl["this"] = self_reference == null ? new RAWNull() : self_reference;
 
             RAWTable argstbl = new RAWTable();
 
@@ -132,10 +146,12 @@ namespace RAW
             catch (ReturnError e)
             {
                 ctx.Pop();
+                if (self_is_table) ((RAWTable)self_reference).IgnoreGetSelf = false;
                 return e.ReturnValue;
             }
 
             ctx.Pop();
+            if (self_is_table) ((RAWTable)self_reference).IgnoreGetSelf = false;
             return new RAWNull();
         }
     }

@@ -73,8 +73,16 @@ namespace RAW
         public VariableNode(Token variable, bool is_global) { this.variable = variable; this.is_global = is_global; }
         public override object evaluate(Context ctx)
         {
-            if (is_global) return ctx.GetGlobalVar(variable.lexeme);
-            return ctx.GetVar(variable.lexeme);
+            object cur_val = is_global ? ctx.GetGlobalVar(variable.lexeme) : ctx.GetVar(variable.lexeme);
+
+            if (cur_val is RAWTable t && !t.IgnoreGetSelf)
+                if (t.Exists("__get__") && t["__get__"] is RAWFunction f)
+                {
+                    f.self_reference = t;
+                    return f.Run(ctx, new List<object>());
+                }
+
+            return cur_val;
         }
     }
 
@@ -463,9 +471,9 @@ namespace RAW
             object cur_val = global ? ctx.GetGlobalVar(varname.lexeme) : ctx.GetVar(varname.lexeme);
 
             if(cur_val is RAWTable t)
-                if(t.Exists("__assign__") && t["__assign__"] is RAWFunction)
+                if(t.Exists("__set__") && t["__set__"] is RAWFunction)
                 {
-                    RAWFunction assign_func = (RAWFunction)t["__assign__"];
+                    RAWFunction assign_func = (RAWFunction)t["__set__"];
                     assign_func.self_reference = t;
                     assign_func.Run(ctx, new List<object> { val });
                     return val;
